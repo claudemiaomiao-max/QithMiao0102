@@ -572,10 +572,8 @@
     .overview-actions { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: nowrap; align-items: center; }
     .overview-action-btn { padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; font-size: var(--font-size-xs); cursor: pointer; transition: all 0.2s; color: var(--text); display: flex; align-items: center; gap: 4px; white-space: nowrap; }
     .overview-action-btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
-    .jump-to-day { display: flex; gap: 6px; align-items: center; }
-    .jump-date-label { font-size: var(--font-size-xs); color: var(--text-light); white-space: nowrap; }
-    .jump-date-input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: var(--font-size-xs); background: var(--bg-card); color: var(--text); outline: none; width: 110px; }
-    .jump-date-input:focus { border-color: var(--primary); }
+    .random-moment-wrapper { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .random-moment-hint { font-size: var(--font-size-xs); color: var(--primary); opacity: 0.7; font-style: italic; }
     .overview-rankings { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
     @media (max-width: 500px) { .overview-rankings { grid-template-columns: 1fr 1fr; gap: 8px; } }
     .ranking-card { background: var(--bg-card); border-radius: 12px; padding: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
@@ -816,11 +814,9 @@
           <p class="overview-text" id="overview-text">加载中...</p>
         </div>
         <div class="overview-actions">
-          <button class="overview-action-btn" onclick="randomJumpToMoment()">🎲 随机带我回某一刻</button>
-          <div class="jump-to-day">
-            <span class="jump-date-label">选择日期</span>
-            <input type="date" id="jump-date-input" class="jump-date-input">
-            <button class="overview-action-btn" onclick="jumpToSpecificDay()">跳到那一天</button>
+          <div class="random-moment-wrapper">
+            <button class="overview-action-btn" onclick="randomJumpToMoment()">🎲 随机带我回某一刻</button>
+            <span class="random-moment-hint">那一刻我们在想什么呢 ♡</span>
           </div>
         </div>
         <div class="overview-rankings">
@@ -908,24 +904,91 @@
     let isComposing = false;
     let chartMode = 'heatmap';
     let wordcloudBlacklist = [];
+    let wordDict = new Set(); // 分词词典
+    let dictLoaded = false;
+    
+    // 加载分词词典
+    async function loadWordDict() {
+      try {
+        // 尝试从相对路径加载词典
+        const response = await fetch('dict/words.json');
+        if (response.ok) {
+          const data = await response.json();
+          wordDict = new Set(data.words || []);
+          dictLoaded = true;
+          console.log(`词典加载成功，共 ${wordDict.size} 个词`);
+        }
+      } catch (e) {
+        console.log('词典加载失败，使用简单分词模式', e);
+        dictLoaded = false;
+      }
+    }
 
     // 停用词表
     const STOPWORDS = new Set([
+      // 基础代词
       '我', '你', '他', '她', '它', '我们', '你们', '他们', '她们', '它们', '自己', '别人', '大家', '这', '那', '这个', '那个', '这些', '那些', '这里', '那里', '哪', '哪个', '哪些', '哪里', '谁', '什么', '怎么', '怎样', '如何', '多少', '几', '某', '每', '各',
-      '的', '地', '得', '了', '着', '过', '吗', '呢', '吧', '啊', '呀', '哇', '哦', '噢', '嗯', '唉', '哎', '啦', '喽', '嘛', '咯', '罢了', '而已',
+      // 助词语气词
+      '的', '地', '得', '了', '着', '过', '吗', '呢', '吧', '啊', '呀', '哇', '哦', '噢', '嗯', '唉', '哎', '啦', '喽', '嘛', '咯', '罢了', '而已', '而且', '并且',
+      // 连词介词
       '和', '与', '及', '或', '或者', '但', '但是', '然而', '可是', '不过', '虽然', '虽', '尽管', '即使', '如果', '假如', '要是', '除非', '因为', '由于', '所以', '因此', '于是', '那么', '则', '就', '便', '才', '又', '也', '还', '再', '都', '只', '仅', '光', '单', '净', '全', '总', '老', '一直', '始终', '已经', '曾经', '正在', '将要', '快要', '刚刚', '刚', '立刻', '马上', '终于', '竟然', '居然', '简直', '几乎', '差点', '大概', '也许', '可能', '应该', '必须', '需要', '可以', '能够', '能', '会', '要', '想', '愿意', '肯', '敢', '在', '从', '到', '向', '往', '朝', '对', '跟', '同', '给', '为', '被', '把', '让', '叫', '使', '比', '按', '照', '根据', '关于', '至于', '对于', '除了', '除', '以', '用', '以便', '以免', '为了',
+      // 程度副词
       '很', '太', '极', '非常', '十分', '特别', '相当', '比较', '更', '最', '越', '稍微', '略', '有点', '不', '没', '没有', '别', '甭', '勿', '未', '无', '非', '真', '真的', '确实', '实在', '其实', '事实上', '当然', '自然', '果然', '毕竟', '究竟', '到底', '反正', '反而', '倒', '偏偏', '恰恰', '恰好', '正好', '刚好',
+      // 数量词
       '一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '百', '千', '万', '亿', '第', '个', '只', '条', '件', '本', '张', '把', '次', '遍', '回', '趟', '下', '番', '种', '样', '些', '点', '块',
-      '年', '月', '日', '号', '时', '分', '秒', '天', '周', '星期', '今天', '明天', '昨天', '现在', '刚才', '以前', '以后', '之前', '之后', '当时', '那时', '这时', '早', '晚', '上午', '下午', '中午', '晚上', '白天', '夜里',
-      '上', '下', '左', '右', '前', '后', '里', '外', '内', '中', '旁', '边', '面', '头', '底', '东', '西', '南', '北',
-      '哈哈', '哈哈哈', '嘿嘿', '呵呵', '嗯嗯', '好的', '好吧', '行', '额', '诶', '唔', '呃', '喔', '就是', '然后', '不是',
-      '是', '有', '在', '说', '看', '想', '知道', '觉得', '认为', '感觉', '希望', '喜欢', '需要', '做', '去', '来', '走', '跑', '站', '坐', '起来', '出来', '进去', '回去', '过来', '过去',
-      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'although', 'though', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'am'
+      // 时间词
+      '年', '月', '日', '号', '时', '分', '秒', '天', '周', '星期', '今天', '明天', '昨天', '现在', '刚才', '以前', '以后', '之前', '之后', '当时', '那时', '这时', '早', '晚', '上午', '下午', '中午', '晚上', '白天', '夜里', '时候', '的时候',
+      // 方位词
+      '上', '下', '左', '右', '前', '后', '里', '外', '内', '中', '旁', '边', '面', '头', '底', '东', '西', '南', '北', '里面', '外面', '上面', '下面', '前面', '后面', '旁边', '中间',
+      // 语气词感叹词
+      '哈哈', '哈哈哈', '哈哈哈哈', '嘿嘿', '呵呵', '嗯嗯', '好的', '好吧', '行', '额', '诶', '唔', '呃', '喔', '就是', '然后', '不是', '嘻嘻', '呜呜', '嗷', '噗', '啧', '嘶', '欸',
+      // 基础动词
+      '是', '有', '在', '说', '看', '想', '知道', '觉得', '认为', '感觉', '希望', '喜欢', '需要', '做', '去', '来', '走', '跑', '站', '坐', '起来', '出来', '进去', '回去', '过来', '过去', '下来', '上去', '进来', '出去',
+      // 常见口语短语 - 代词+动词组合
+      '你说', '我说', '他说', '她说', '你是', '我是', '他是', '她是', '是你', '是我', '是他', '是她', '你的', '我的', '他的', '她的',
+      '你在', '我在', '你有', '我有', '你能', '我能', '你会', '我会', '你要', '我要', '你想', '我想', '你看', '我看',
+      '你知道', '我知道', '你觉得', '我觉得', '你以为', '我以为', '你认为', '我认为', '你喜欢', '我喜欢',
+      '你知道我', '我知道你', '你知道你', '我知道我', '你以为我', '我以为你', '你以为你', '我以为我',
+      '你不是', '我不是', '他不是', '她不是', '不是你', '不是我', '不是他', '不是她',
+      '你不是在', '我不是在', '你不是不', '我不是不', '你不是说', '我不是说',
+      '你不要', '我不要', '你不能', '我不能', '你不会', '我不会', '你不想', '我不想',
+      '你不需要', '我不需要', '你需要', '我需要',
+      // 疑问/反问短语
+      '是不是', '好不好', '行不行', '对不对', '要不要', '能不能', '会不会', '可不可以',
+      '你是不是', '我是不是', '他是不是', '她是不是',
+      '是因为', '不是因为', '是因为你', '是因为我', '不是因为你', '不是因为我',
+      // 常见短语结构
+      '的人', '的话', '的样子', '的感觉', '的意思', '的事', '的事情', '的问题', '的原因', '的结果',
+      '一下', '一点', '一句', '一个', '一些', '一起', '一样', '一般', '一定', '一直',
+      '那种', '这种', '什么样', '怎么样', '那样', '这样', '一样的',
+      '比如', '比如说', '例如', '就像', '好像', '似乎', '仿佛',
+      '而是', '还是', '就是', '只是', '不只是', '不仅是', '也是', '都是', '全是',
+      '着你', '着我', '给你', '给我', '对你', '对我', '跟你', '跟我', '和你', '和我',
+      '你一', '我一', '你这', '我这', '你那', '我那',
+      '一句话', '你一句', '我一句', '每一下', '每一次', '每一个', '每一天',
+      '来了', '去了', '走了', '回来', '回去', '过来', '过去', '起来', '下去',
+      '地方', '时间', '东西', '事情', '问题', '情况', '方面', '方式', '方法',
+      '怎么办', '怎么说', '怎么做', '怎么回事', '怎么了', '怎么会',
+      '为什么', '是什么', '做什么', '说什么', '想什么', '干什么',
+      '我就', '你就', '就我', '就你', '我就是', '你就是', '我就知道', '你就知道',
+      '我现在', '你现在', '我现在就', '你现在就',
+      '你是我', '我是你', '你是我的', '我是你的',
+      '不行', '不好', '不对', '不能', '不会', '不想', '不要', '不用', '不必',
+      '可以', '可能', '可是', '可以吗', '可以的', '可不可以',
+      '好了', '行了', '算了', '得了', '够了', '完了', '好啦', '行啦',
+      '那个', '这个', '哪个', '某个', '每个', '另一个', '下一个', '上一个',
+      '另一', '其他', '别的', '其它', '另外',
+      '只手', '只眼', '只脚', '另一只', '另一只手',
+      '怀里', '手里', '心里', '眼里', '脑子里', '嘴里',
+      '情绪', '感情', '心情', '状态',
+      '小姐', '先生', '同学', '朋友', '老师',
+      // 英文停用词
+      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'although', 'though', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'am', 'about', 'like', 'just', 'know', 'think', 'want', 'see', 'come', 'go', 'get', 'make', 'say', 'tell', 'ask', 'use', 'find', 'give', 'take', 'need', 'feel', 'try', 'let', 'put', 'mean', 'keep', 'begin', 'seem', 'help', 'show', 'hear', 'play', 'run', 'move', 'live', 'believe', 'hold', 'bring', 'happen', 'write', 'provide', 'sit', 'stand', 'lose', 'pay', 'meet', 'include', 'continue', 'set', 'learn', 'change', 'lead', 'understand', 'watch', 'follow', 'stop', 'create', 'speak', 'read', 'allow', 'add', 'spend', 'grow', 'open', 'walk', 'win', 'offer', 'remember', 'love', 'consider', 'appear', 'buy', 'wait', 'serve', 'die', 'send', 'expect', 'build', 'stay', 'fall', 'cut', 'reach', 'kill', 'remain', 'yeah', 'yes', 'okay', 'ok', 'oh', 'um', 'uh', 'well', 'like', 'really', 'actually', 'basically', 'literally', 'honestly', 'seriously'
     ]);
 
     document.addEventListener('DOMContentLoaded', async () => {
       showLoading('正在初始化...');
-      try { loadSettings(); loadBlacklist(); applySettings(); await openDatabase(); await loadFromDatabase(); setupDragDrop(); setupSearchInput(); } catch (e) { console.error('初始化失败', e); showToast('初始化失败，请刷新重试'); }
+      try { loadSettings(); loadBlacklist(); applySettings(); await loadWordDict(); await openDatabase(); await loadFromDatabase(); setupDragDrop(); setupSearchInput(); } catch (e) { console.error('初始化失败', e); showToast('初始化失败，请刷新重试'); }
       hideLoading();
     });
 
@@ -1808,21 +1871,54 @@
       });
     }
     
-    // 分词函数
+    // 正向最大匹配分词
     function segmentChinese(text, hideEnglish = false) {
       const words = new Map();
-      // 提取2-4字中文词组
-      const chineseRegex = /[\u4e00-\u9fa5]{2,4}/g;
-      let match;
-      while ((match = chineseRegex.exec(text)) !== null) {
-        const word = match[0];
-        if (!STOPWORDS.has(word) && !wordcloudBlacklist.includes(word)) {
-          words.set(word, (words.get(word) || 0) + 1);
+      
+      // 如果词典加载成功，使用正向最大匹配
+      if (dictLoaded && wordDict.size > 0) {
+        // 提取所有中文片段
+        const chineseSegments = text.match(/[\u4e00-\u9fa5]+/g) || [];
+        
+        for (const segment of chineseSegments) {
+          let i = 0;
+          while (i < segment.length) {
+            let matched = false;
+            // 从最长的词开始匹配（最大5个字）
+            for (let len = Math.min(5, segment.length - i); len >= 2; len--) {
+              const word = segment.substring(i, i + len);
+              if (wordDict.has(word)) {
+                // 找到词典中的词
+                if (!STOPWORDS.has(word) && !wordcloudBlacklist.includes(word)) {
+                  words.set(word, (words.get(word) || 0) + 1);
+                }
+                i += len;
+                matched = true;
+                break;
+              }
+            }
+            // 如果没有匹配到，跳过一个字
+            if (!matched) {
+              i++;
+            }
+          }
+        }
+      } else {
+        // 词典未加载，使用简单的2-4字提取（备用方案）
+        const chineseRegex = /[\u4e00-\u9fa5]{2,4}/g;
+        let match;
+        while ((match = chineseRegex.exec(text)) !== null) {
+          const word = match[0];
+          if (!STOPWORDS.has(word) && !wordcloudBlacklist.includes(word)) {
+            words.set(word, (words.get(word) || 0) + 1);
+          }
         }
       }
-      // 提取英文单词(3字母以上)，如果没有屏蔽英文
+      
+      // 提取英文单词(3字母以上)
       if (!hideEnglish) {
         const englishRegex = /[a-zA-Z]{3,}/g;
+        let match;
         while ((match = englishRegex.exec(text)) !== null) {
           const word = match[0].toLowerCase();
           if (!STOPWORDS.has(word) && !wordcloudBlacklist.includes(word)) {
@@ -1830,6 +1926,7 @@
           }
         }
       }
+      
       return words;
     }
     
@@ -2064,20 +2161,6 @@
       const timeStr = randomMsg.time ? formatFullDateTime(randomMsg.time) : '';
       const roleStr = randomMsg.role === 'user' ? '你说的' : 'AI说的';
       showToast(`🎲 随机到了 ${timeStr} ${roleStr}一句话~`);
-    }
-    
-    function jumpToSpecificDay() {
-      const input = document.getElementById('jump-date-input');
-      if (!input || !input.value) {
-        showToast('请先选择日期');
-        return;
-      }
-      const ds = input.value; // 格式已经是 YYYY-MM-DD
-      if (statsByDate[ds]) {
-        showDayMessages(ds);
-      } else {
-        showToast('这天没有聊天记录');
-      }
     }
     
     function showDayMessages(ds) { 
