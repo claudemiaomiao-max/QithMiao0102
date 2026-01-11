@@ -401,11 +401,15 @@
     .collapsible-section.collapsed { height: 0 !important; padding: 0 !important; margin: 0 !important; opacity: 0; }
     .search-section { margin-bottom: 8px; }
     .search-box { position: relative; }
-    .search-box input { width: 100%; padding: 10px 16px 10px 40px; border: 2px solid var(--border); border-radius: 20px; font-size: var(--font-size-base); outline: none; transition: all 0.2s; background: var(--bg); color: var(--text); }
+    .search-box input { width: 100%; padding: 10px 44px 10px 16px; border: 2px solid var(--border); border-radius: 20px; font-size: var(--font-size-base); outline: none; transition: all 0.2s; background: var(--bg); color: var(--text); }
     .search-box input:focus { border-color: var(--primary); background: var(--bg-card); }
     .search-box input::placeholder { color: var(--text-light); }
     .search-box .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); }
-    .search-mode-toggle { display: flex; gap: 4px; margin-top: 8px; }
+    
+    .search-box .search-submit-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; padding: 6px 8px; border-radius: 10px; font-size: 16px; line-height: 1; color: var(--text-light); transition: all 0.2s; }
+    .search-box .search-submit-btn:hover { background: var(--primary-light); color: var(--primary-dark); }
+    .search-box .search-submit-btn:active { transform: translateY(-50%) scale(0.98); }
+.search-mode-toggle { display: flex; gap: 4px; margin-top: 8px; }
     .search-mode-btn { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 15px; background: var(--bg); font-size: var(--font-size-xs); cursor: pointer; transition: all 0.2s; color: var(--text); }
     .search-mode-btn:hover { border-color: var(--primary); }
     .search-mode-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -492,6 +496,9 @@
     .star-btn { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: 0.4; transition: all 0.2s; padding: 2px; }
     .star-btn:hover { opacity: 0.8; }
     .star-btn.active { opacity: 1; color: var(--star-active); }
+    .msg-delete-btn { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0; transition: all 0.2s; padding: 2px 6px; color: var(--text-light); border-radius: 4px; }
+    .message:hover .msg-delete-btn { opacity: 0.5; }
+    .msg-delete-btn:hover { opacity: 1; color: var(--danger); background: var(--danger-light); }
     .view-global-search { display: none; flex-direction: column; height: calc(100vh - 64px); }
     .view-global-search.show { display: flex; }
     .global-search-header { padding: 12px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
@@ -704,6 +711,42 @@
     .export-format-btn .format-name { font-weight: 500; }
     .export-format-btn .format-desc { font-size: var(--font-size-xs); color: var(--text-light); margin-top: 2px; }
     @media (max-width: 480px) { .header-logo { font-size: 0.95rem; } .message-body { max-width: 85%; } .upload-box { padding: 30px 20px; } }
+  
+    /* Markdown rendering inside bubbles */
+    .message-bubble { white-space: normal; }
+    .message-bubble p { margin: 0.4em 0; }
+    .message-bubble p:first-child { margin-top: 0; }
+    .message-bubble p:last-child { margin-bottom: 0; }
+    .message-bubble h1, .message-bubble h2, .message-bubble h3, .message-bubble h4, .message-bubble h5, .message-bubble h6 {
+      margin: 0.7em 0 0.35em;
+      line-height: 1.25;
+      font-weight: 650;
+    }
+    .message-bubble ul, .message-bubble ol { margin: 0.4em 0; padding-left: 1.2em; }
+    .message-bubble li { margin: 0.15em 0; }
+    .message-bubble blockquote {
+      margin: 0.4em 0;
+      padding: 0.1em 0 0.1em 0.8em;
+      border-left: 3px solid rgba(0,0,0,0.18);
+      opacity: 0.95;
+    }
+    [data-theme="dark"] .message-bubble blockquote { border-left-color: rgba(255,255,255,0.22); }
+    .message-bubble pre {
+      margin: 0.55em 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      overflow: auto;
+      background: rgba(0,0,0,0.06);
+    }
+    [data-theme="dark"] .message-bubble pre { background: rgba(255,255,255,0.08); }
+    .message-bubble code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.95em;
+    }
+    .message-bubble pre code { white-space: pre; }
+    .message-bubble a { color: var(--primary); text-decoration: underline; }
+    mark.kw-highlight { background: var(--highlight-bg); padding: 1px 2px; border-radius: 2px; }
+
   </style>
 </head>
 <body>
@@ -769,7 +812,7 @@
   <nav class="drawer" id="drawer"><div class="drawer-header"><h2 id="drawer-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span id="drawer-title-text">我们的回忆</span></h2><p id="drawer-subtitle">还没有上传对话哦~</p></div><div class="drawer-menu"><div class="drawer-menu-item active" data-view="conversations" onclick="switchView('conversations')"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="label">对话</span></div><div class="drawer-menu-item" data-view="favorites" onclick="switchView('favorites')"><svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span class="label">收藏</span></div><div class="drawer-menu-item" data-view="stats" onclick="switchView('stats')"><svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="label">统计</span></div><div class="drawer-menu-item" data-view="timeline" onclick="switchView('timeline')"><svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="label">时间轴</span></div><div class="drawer-menu-item" onclick="openSettings()"><svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="label">设置</span></div><div class="drawer-menu-item danger" onclick="showClearDataModal()"><svg class="icon-svg" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg><span class="label">清除</span></div></div><div class="conv-actions" id="conv-actions"><button class="conv-action-btn" id="select-mode-btn" onclick="toggleSelectMode()">☑ 多选</button><button class="conv-action-btn" id="export-selected-btn" onclick="exportSelectedConversations()" style="display:none;">📤 导出</button><button class="conv-action-btn danger" id="delete-selected-btn" onclick="showDeleteSelectedModal()" style="display:none;">🗑 删除</button></div><div class="conv-search"><input type="text" id="conv-search-input" placeholder="🔍 搜索对话标题..." oninput="filterConversations()"></div><div class="drawer-conversations" id="drawer-conversations"><div class="empty-state"><div class="icon">📭</div><p>上传JSON后这里会显示对话列表~</p></div></div></nav>
   <main class="main-content">
     <div class="view-upload" id="view-upload"><div class="upload-box" id="upload-box"><div class="icon">📁</div><h2>上传你的对话记录</h2><p>拖拽 ChatGPT 导出的 JSON 文件到这里<br>或点击下方按钮选择文件</p><button class="upload-btn" onclick="document.getElementById('file-input').click()">✨ 选择文件</button><div class="upload-hint">💡 支持多次上传，会自动去重合并哦~<br>📝 改名的对话会自动识别并更新</div></div></div>
-    <div class="view-chat" id="view-chat"><div class="chat-header" id="chat-header"><div class="chat-title-row"><div class="chat-title" id="chat-title">对话标题</div><button class="collapse-btn" id="collapse-btn" onclick="toggleHeaderCollapse()" title="折叠/展开">▲</button></div><div class="collapsible-section" id="collapsible-section"><div class="search-section"><div class="search-box"><span class="search-icon">🔍</span><input type="text" id="search-input" placeholder="搜索消息内容..."></div><div class="search-mode-toggle"><button class="search-mode-btn active" data-mode="current" onclick="setSearchMode('current')">当前对话</button><button class="search-mode-btn" data-mode="global" onclick="setSearchMode('global')">全部对话</button></div><div class="global-search-info" id="global-search-info"><span class="search-result-count" id="search-result-count">找到 0 条结果</span><div class="search-nav-btns"><button class="search-nav-btn" onclick="navigateSearchResult(-1)">◀ 上一个</button><button class="search-nav-btn" onclick="navigateSearchResult(1)">下一个 ▶</button></div></div></div></div></div><div class="timeline-nav" id="timeline-nav"></div><div class="chat-messages" id="chat-messages"></div></div>
+    <div class="view-chat" id="view-chat"><div class="chat-header" id="chat-header"><div class="chat-title-row"><div class="chat-title" id="chat-title">对话标题</div><button class="collapse-btn" id="collapse-btn" onclick="toggleHeaderCollapse()" title="折叠/展开">▲</button></div><div class="collapsible-section" id="collapsible-section"><div class="search-section"><div class="search-box"><input type="text" id="search-input" placeholder="搜索消息内容..." enterkeyhint="search"><button type="button" id="search-submit" class="search-submit-btn" title="搜索">🔍</button></div><div class="search-mode-toggle"><button class="search-mode-btn active" data-mode="current" onclick="setSearchMode('current')">当前对话</button><button class="search-mode-btn" data-mode="global" onclick="setSearchMode('global')">全部对话</button></div><div class="global-search-info" id="global-search-info"><span class="search-result-count" id="search-result-count">找到 0 条结果</span><div class="search-nav-btns"><button class="search-nav-btn" onclick="navigateSearchResult(-1)">◀ 上一个</button><button class="search-nav-btn" onclick="navigateSearchResult(1)">下一个 ▶</button></div></div></div></div></div><div class="timeline-nav" id="timeline-nav"></div><div class="chat-messages" id="chat-messages"></div></div>
     <div class="view-global-search" id="view-global-search"><div class="global-search-header"><div class="global-search-title"><button class="global-search-back" onclick="exitGlobalSearch()">←</button><h2>🔍 全局搜索结果</h2></div><div class="global-search-stats" id="global-search-stats">搜索中...</div></div><div class="global-search-results" id="global-search-results"><div class="empty-state"><div class="icon">🔍</div><p>输入关键词开始搜索~</p></div></div></div>
     <div class="view-conv-select" id="view-conv-select"><div class="day-header"><button class="day-back-btn" onclick="switchView('timeline')">←</button><div class="day-title"><h2 id="conv-select-title">2024年1月1日</h2><p id="conv-select-subtitle">请选择要查看的对话窗口</p></div></div><div class="conv-select-list" id="conv-select-list"></div></div>
     <div class="view-day-messages" id="view-day-messages"><div class="day-header"><button class="day-back-btn" onclick="backToConvSelect()">←</button><div class="day-title"><h2 id="day-messages-title">2024年1月1日</h2><p id="day-messages-subtitle">共 0 条消息</p></div></div><div class="day-messages" id="day-messages-container"></div></div>
@@ -870,7 +913,9 @@
     <div class="view-timeline" id="view-timeline"><h2 class="view-title"><svg class="title-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>按日期跳转</h2><div class="timeline-list" id="timeline-list"></div></div>
   </main>
   
-  <script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.3/dist/purify.min.js"></script>
+<script>
     const DB_NAME = 'QithMiaoMiaoLogs';
     const DB_VERSION = 2;
     let db = null;
@@ -903,6 +948,7 @@
     let currentSearchKeyword = '';
     let isComposing = false;
     let chartMode = 'heatmap';
+    let monthStatsCache = {}; // 月份统计缓存，key格式：YYYY-MM
     let wordcloudBlacklist = [];
     let wordDict = new Set(); // 分词词典
     let dictLoaded = false;
@@ -981,7 +1027,6 @@
       '只手', '只眼', '只脚', '另一只', '另一只手',
       '怀里', '手里', '心里', '眼里', '脑子里', '嘴里',
       '情绪', '感情', '心情', '状态',
-      '小姐', '先生', '同学', '朋友', '老师',
       // 英文停用词
       'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'although', 'though', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'am', 'about', 'like', 'just', 'know', 'think', 'want', 'see', 'come', 'go', 'get', 'make', 'say', 'tell', 'ask', 'use', 'find', 'give', 'take', 'need', 'feel', 'try', 'let', 'put', 'mean', 'keep', 'begin', 'seem', 'help', 'show', 'hear', 'play', 'run', 'move', 'live', 'believe', 'hold', 'bring', 'happen', 'write', 'provide', 'sit', 'stand', 'lose', 'pay', 'meet', 'include', 'continue', 'set', 'learn', 'change', 'lead', 'understand', 'watch', 'follow', 'stop', 'create', 'speak', 'read', 'allow', 'add', 'spend', 'grow', 'open', 'walk', 'win', 'offer', 'remember', 'love', 'consider', 'appear', 'buy', 'wait', 'serve', 'die', 'send', 'expect', 'build', 'stay', 'fall', 'cut', 'reach', 'kill', 'remain', 'yeah', 'yes', 'okay', 'ok', 'oh', 'um', 'uh', 'well', 'like', 'really', 'actually', 'basically', 'literally', 'honestly', 'seriously'
     ]);
@@ -1041,10 +1086,23 @@
 
     function setupSearchInput() {
       const searchInput = document.getElementById('search-input');
+      const searchBtn = document.getElementById('search-submit');
       if (!searchInput) return;
+      // 不在每次输入时自动跳转；改为：按 Enter 或点 🔍 才执行搜索
       searchInput.addEventListener('compositionstart', () => { isComposing = true; });
-      searchInput.addEventListener('compositionend', (e) => { isComposing = false; handleSearch(); });
-      searchInput.addEventListener('input', (e) => { if (isComposing) return; handleSearch(); });
+      searchInput.addEventListener('compositionend', () => { isComposing = false; });
+      // 允许“清空关键词”时自动回到正常视图，但不在输入过程中自动跳转
+      searchInput.addEventListener('input', () => {
+        if (isComposing) return;
+        if (searchInput.value.trim() === '') handleSearch();
+      });
+      searchInput.addEventListener('keydown', (e) => {
+        if (isComposing) return;
+        if (e.key === 'Enter') { e.preventDefault(); handleSearch(); }
+      });
+      if (searchBtn) {
+        searchBtn.addEventListener('click', () => { if (isComposing) return; handleSearch(); });
+      }
     }
 
     function loadSettings() { try { const saved = localStorage.getItem('chatLogViewerSettings'); if (saved) appSettings = { ...appSettings, ...JSON.parse(saved) }; } catch (e) { console.error('加载设置失败', e); } }
@@ -1209,6 +1267,13 @@
     function selectFontSize(size) { document.querySelectorAll('.fontsize-btn').forEach(b => b.classList.toggle('active', b.dataset.size === size)); appSettings.fontSize = size; if (size === 'medium') document.body.removeAttribute('data-fontsize'); else document.body.setAttribute('data-fontsize', size); }
     function saveSettings() { appSettings.userName = document.getElementById('settings-user-name').value.trim(); appSettings.aiName = document.getElementById('settings-ai-name').value.trim(); saveSettingsToStorage(); applySettings(); if (currentMessages.length > 0) renderMessages(currentMessages); closeSettings(); showToast('设置已保存'); }
     
+    // 时间戳校验函数，过滤异常数据（如57370年这种）
+    function isValidTimestamp(ts) {
+      if (!ts || ts <= 0) return false;
+      const date = new Date(ts * 1000);
+      const year = date.getFullYear();
+      return year >= 2020 && year <= 2030;
+    }
     async function loadFromDatabase() { 
       try { 
         allConversations = await getAllConversationsFromDb(); 
@@ -1290,6 +1355,59 @@
     function highlightKeywordInText(text, keyword) { if (!keyword) return text; const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi'); return text.replace(regex, '<span class="highlight">$1</span>'); }
     function escapeRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
     
+    
+    // Markdown renderer (safe)
+    const _md = (window.markdownit ? window.markdownit({ html: false, linkify: true, breaks: true }) : null);
+    function renderMarkdown(src) {
+      const s = (src == null) ? '' : String(src);
+      if (!_md) {
+        // fallback: escaped + preserve line breaks
+        return escapeHtml(s).replace(/\n/g, '<br>');
+      }
+      const dirty = _md.render(s);
+      if (window.DOMPurify) return DOMPurify.sanitize(dirty);
+      return dirty;
+    }
+
+    // Highlight keyword inside rendered HTML without breaking tags
+    function highlightKeywordInHtml(html, keyword) {
+      if (!keyword) return html;
+      const kw = String(keyword).trim();
+      if (!kw) return html;
+
+      const container = document.createElement('div');
+      container.innerHTML = html;
+
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      const regex = new RegExp(escapeRegExp(kw), 'gi');
+      const targets = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (!node.nodeValue) continue;
+        regex.lastIndex = 0;
+        if (regex.test(node.nodeValue)) targets.push(node);
+      }
+
+      targets.forEach(n => {
+        const text = n.nodeValue;
+        const frag = document.createDocumentFragment();
+        let last = 0, m;
+        regex.lastIndex = 0;
+        while ((m = regex.exec(text))) {
+          if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+          const mark = document.createElement('mark');
+          mark.className = 'kw-highlight';
+          mark.textContent = m[0];
+          frag.appendChild(mark);
+          last = m.index + m[0].length;
+        }
+        if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+        n.parentNode.replaceChild(frag, n);
+      });
+
+      return container.innerHTML;
+    }
+
     function jumpToSearchResult(convId, msgId, keyword) {
       currentSearchKeyword = keyword;
       openConversation(convId, keyword, true);
@@ -1357,7 +1475,7 @@
         messages.forEach(msg => {
           msg.convIndex = convIndex; msg.convId = conv.id; msg.convTitle = conv.title || `对话 ${convIndex + 1}`;
           allMessages.push(msg);
-          if (msg.time) {
+          if (msg.time && isValidTimestamp(msg.time)) {
             const ds = formatDateKey(msg.time);
             if (!messagesByDate[ds]) messagesByDate[ds] = [];
             messagesByDate[ds].push(msg);
@@ -1367,6 +1485,18 @@
             statsByDate[ds].count++;
           }
         });
+      });
+      // 预计算所有月份的热力图数据缓存
+      monthStatsCache = {};
+      Object.keys(statsByDate).forEach(ds => {
+        const [year, month] = ds.split('-');
+        const monthKey = `${year}-${month}`;
+        if (!monthStatsCache[monthKey]) monthStatsCache[monthKey] = { totalWords: 0, activeDays: 0, days: {} };
+        const st = statsByDate[ds];
+        const dayWords = st.userWords + st.aiWords;
+        monthStatsCache[monthKey].totalWords += dayWords;
+        monthStatsCache[monthKey].activeDays++;
+        monthStatsCache[monthKey].days[ds] = dayWords;
       });
       renderConversationList(); updateDrawerSubtitle(); renderCalendar(); renderTimeline(); updateConvFilterOptions();
     }
@@ -1480,7 +1610,7 @@
         const ds = msg.time ? formatDateKey(msg.time) : '';
         if (showConvTitle && msg.convId !== lastConvId) { html += `<div class="conv-group-title">📚 ${escapeHtml(msg.convTitle)}</div>`; lastConvId = msg.convId; }
         if (ds && ds !== lastDate) { html += `<div class="date-divider" id="date-${ds}"><span>${formatDate(msg.time)}</span></div>`; lastDate = ds; }
-        let dc = escapeHtml(msg.content); if (highlightKw) dc = highlightKeywordInText(dc, highlightKw);
+        let dc = renderMarkdown(msg.content); if (highlightKw) dc = highlightKeywordInHtml(dc, highlightKw);
         if (msg.type === 'custom_instructions') { html += `<div class="message system" id="msg-${msg.id}" data-date="${ds}"><div class="message-avatar-wrapper"><div class="message-avatar">⚙️</div></div><div class="message-body"><div class="message-bubble"><span class="system-label">📋 窗口自定义指令</span><div style="white-space: pre-wrap;">${dc}</div></div></div></div>`; }
         else if (msg.type === 'memory_update' || msg.type === 'memory_call') { html += `<div class="message memory" id="msg-${msg.id}" data-date="${ds}"><div class="message-avatar-wrapper"><div class="message-avatar">🧠</div></div><div class="message-body"><div class="message-bubble"><span class="memory-label">💾 记忆库操作</span><div style="white-space: pre-wrap;">${dc}</div></div><div class="message-footer"><span class="message-time">${msg.time ? formatFullDateTime(msg.time) : ''}</span></div></div></div>`; }
         else { 
@@ -1489,7 +1619,7 @@
           const avatarContent = msg.role === 'user' 
             ? (appSettings.userAvatar ? `<img src="${appSettings.userAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🧸')
             : (appSettings.aiAvatar ? `<img src="${appSettings.aiAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🤖');
-          html += `<div class="message ${msg.role}" id="msg-${msg.id}" data-date="${ds}"><div class="message-avatar-wrapper"><div class="message-avatar">${avatarContent}</div>${an ? `<span class="avatar-name">${escapeHtml(an)}</span>` : ''}</div><div class="message-body"><div class="message-bubble">${dc}</div><div class="message-footer"><span class="message-time">${msg.time ? formatFullDateTime(msg.time) : ''}</span>${mb}<button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${msg.id}', '${convIdForFav}', this)">${isFav ? '⭐' : '☆'}</button></div></div></div>`; 
+          html += `<div class="message ${msg.role}" id="msg-${msg.id}" data-date="${ds}"><div class="message-avatar-wrapper"><div class="message-avatar">${avatarContent}</div>${an ? `<span class="avatar-name">${escapeHtml(an)}</span>` : ''}</div><div class="message-body"><div class="message-bubble">${dc}</div><div class="message-footer"><span class="message-time">${msg.time ? formatFullDateTime(msg.time) : ''}</span>${mb}<button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${msg.id}', '${convIdForFav}', this)">${isFav ? '⭐' : '☆'}</button><button class="msg-delete-btn" onclick="showDeleteMsgModal('${msg.id}', '${convIdForFav}')" title="删除此消息">🗑</button></div></div></div>`; 
         }
       });
       tc.innerHTML = html;
@@ -1510,6 +1640,66 @@
         btn.classList.add('active'); 
         btn.textContent = '⭐'; 
       } 
+    }
+    
+    // 删除单条消息
+    function showDeleteMsgModal(msgId, convId) {
+      showModal('🗑️', '删除消息', '确定要删除这条消息吗？\n此操作无法撤销！', async () => {
+        await performDeleteMessage(msgId, convId);
+      }, true);
+    }
+    
+    async function performDeleteMessage(msgId, convId) {
+      try {
+        // 从当前对话中找到并删除消息
+        const conv = allConversations.find(c => c.id === convId);
+        if (conv && conv.mapping && conv.mapping[msgId]) {
+          delete conv.mapping[msgId];
+          // 保存更新后的对话到数据库
+          await saveConversationToDb(conv);
+        }
+        // 从allMessages中移除
+        const msgIndex = allMessages.findIndex(m => m.id === msgId);
+        if (msgIndex >= 0) {
+          const msg = allMessages[msgIndex];
+          // 更新统计数据
+          if (msg.time && isValidTimestamp(msg.time)) {
+            const ds = formatDateKey(msg.time);
+            if (statsByDate[ds]) {
+              const words = msg.content.length;
+              if (msg.role === 'user') statsByDate[ds].userWords -= words;
+              else statsByDate[ds].aiWords -= words;
+              statsByDate[ds].count--;
+              if (statsByDate[ds].count <= 0) delete statsByDate[ds];
+            }
+            if (messagesByDate[ds]) {
+              messagesByDate[ds] = messagesByDate[ds].filter(m => m.id !== msgId);
+              if (messagesByDate[ds].length === 0) delete messagesByDate[ds];
+            }
+          }
+          // 更新对话统计
+          if (conversationStats[convId]) {
+            conversationStats[convId].messageCount--;
+            conversationStats[convId].totalChars -= msg.content.length;
+            conversationStats[convId].estimatedTokens = Math.round(conversationStats[convId].totalChars / 2.5);
+          }
+          allMessages.splice(msgIndex, 1);
+        }
+        // 从currentMessages中移除并重新渲染
+        currentMessages = currentMessages.filter(m => m.id !== msgId);
+        // 如果有收藏也移除
+        if (favorites.has(msgId)) {
+          favorites.delete(msgId);
+          await removeFavoriteFromDb(msgId);
+        }
+        // 重新渲染
+        renderMessages(currentMessages);
+        renderConversationList();
+        showToast('已删除消息');
+      } catch (e) {
+        console.error('删除消息失败', e);
+        showToast('删除失败，请重试');
+      }
     }
     
     function toggleFavSelectMode() { isFavSelectMode = !isFavSelectMode; selectedFavMsgIds.clear(); const btn = document.getElementById('fav-select-btn'), sab = document.getElementById('fav-select-all-btn'), ub = document.getElementById('fav-unfav-all-btn'), eb = document.getElementById('fav-export-btn'); if (isFavSelectMode) { btn.classList.add('active'); btn.innerHTML = '✓ 取消'; sab.style.display = 'inline-flex'; ub.style.display = 'inline-flex'; eb.style.display = 'inline-flex'; } else { btn.classList.remove('active'); btn.innerHTML = '☑ 多选'; sab.style.display = 'none'; ub.style.display = 'none'; eb.style.display = 'none'; } renderFavorites(); }
@@ -1635,7 +1825,39 @@
       }, 300);
     }
     
-    function renderCalendar() { const c = document.getElementById('calendar-days'); updateDateLabel(); const fd = new Date(currentYear, currentMonth, 1).getDay(), dim = new Date(currentYear, currentMonth + 1, 0).getDate(); let html = '', mtw = 0, mad = 0; for (let i = 0; i < fd; i++) html += '<div class="calendar-day empty"></div>'; for (let d = 1; d <= dim; d++) { const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`, st = statsByDate[ds]; let hc = '', wl = ''; if (st) { const tw = st.userWords + st.aiWords; mtw += tw; mad++; wl = formatWordCount(tw); if (tw < 5000) hc = 'heat-1'; else if (tw < 20000) hc = 'heat-2'; else if (tw < 50000) hc = 'heat-3'; else hc = 'heat-4'; } html += `<div class="calendar-day ${hc}" onclick="showDayMessages('${ds}')"><span class="day-num">${d}</span>${wl ? `<span class="day-words">${wl}</span>` : ''}</div>`; } c.innerHTML = html; document.getElementById('stat-total-words').textContent = formatWordCount(mtw); document.getElementById('stat-total-days').textContent = mad + '天'; renderWordCloud(); renderOverview(); }
+    function renderCalendar() {
+      const c = document.getElementById('calendar-days');
+      updateDateLabel();
+      const fd = new Date(currentYear, currentMonth, 1).getDay();
+      const dim = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      const cached = monthStatsCache[monthKey];
+      let html = '';
+      // 填充空白格子
+      for (let i = 0; i < fd; i++) html += '<div class="calendar-day empty"></div>';
+      // 渲染每一天
+      for (let d = 1; d <= dim; d++) {
+        const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const tw = cached?.days?.[ds] || 0;
+        let hc = '', wl = '';
+        if (tw > 0) {
+          wl = formatWordCount(tw);
+          if (tw < 5000) hc = 'heat-1';
+          else if (tw < 20000) hc = 'heat-2';
+          else if (tw < 50000) hc = 'heat-3';
+          else hc = 'heat-4';
+        }
+        html += `<div class="calendar-day ${hc}" onclick="showDayMessages('${ds}')"><span class="day-num">${d}</span>${wl ? `<span class="day-words">${wl}</span>` : ''}</div>`;
+      }
+      c.innerHTML = html;
+      // 使用缓存的统计数据
+      const mtw = cached?.totalWords || 0;
+      const mad = cached?.activeDays || 0;
+      document.getElementById('stat-total-words').textContent = formatWordCount(mtw);
+      document.getElementById('stat-total-days').textContent = mad + '天';
+      renderWordCloud();
+      renderOverview();
+    }
     function changeMonth(d) { 
       if (chartMode === 'year') {
         // 年度模式下只切换年份
